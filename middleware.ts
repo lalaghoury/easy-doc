@@ -42,9 +42,9 @@ export async function middleware(req: NextRequest, res: NextResponse) {
     // Decoding the JWT token to get the email verification status and role
     const { email_verified, "custom:role": role } = decodeJWT(token).payload;
 
-    // If the email is not verified, redirect to sign-in
+    // If the email is not verified, redirect to confirm-email
     if (!email_verified) {
-      return NextResponse.redirect(new URL("/auth/sign-in", req.url));
+      return NextResponse.redirect(new URL("/auth/confirm-email", req.url));
     }
 
     // If the user is logged in and trying to access the /auth or root path, redirect to home
@@ -56,7 +56,7 @@ export async function middleware(req: NextRequest, res: NextResponse) {
     return NextResponse.next();
   } catch (error: any) {
     // If there is an error decoding the token, default to redirect to sign-in if not authorized and not in /auth path
-    if (!pathname.startsWith("/auth")) {
+    if (!pathname.startsWith("/auth") && pathname !== "/") {
       return NextResponse.redirect(new URL("/auth/sign-in", req.url));
     }
   }
