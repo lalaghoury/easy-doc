@@ -7,12 +7,12 @@ import { toast } from "sonner";
 // Define a type for the slice state
 interface authState {
   user: {
-    name?: string;
-    avatar?: string;
-    email?: string;
-    phone?: string;
-    role?: string;
-    userId?: string;
+    name: string;
+    avatar: string;
+    email: string;
+    phone: string;
+    role: string;
+    userId: string;
   };
   loading: boolean;
   error: string | null;
@@ -129,14 +129,9 @@ export const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      //TODO: add the logged in user here
-      .addCase(
-        authThunks.signin.fulfilled,
-        (state, action: PayloadAction<any>) => {
-          state.user = action.payload;
-          state.loading = false;
-        }
-      )
+      .addCase(authThunks.signin.fulfilled, (state) => {
+        state.loading = false;
+      })
       .addCase(
         authThunks.signin.rejected,
         (state, action: PayloadAction<any>) => {
@@ -155,6 +150,23 @@ export const authSlice = createSlice({
       })
       .addCase(
         authThunks.signout.rejected,
+        (state, action: PayloadAction<any>) => {
+          state.loading = false;
+          state.error = action.payload;
+          toast.error(action.payload);
+        }
+      )
+
+      .addCase(authThunks.requestPasswordReset.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(authThunks.requestPasswordReset.fulfilled, (state) => {
+        state.loading = false;
+        // Object.assign(state, initialState);
+      })
+      .addCase(
+        authThunks.requestPasswordReset.rejected,
         (state, action: PayloadAction<any>) => {
           state.loading = false;
           state.error = action.payload;

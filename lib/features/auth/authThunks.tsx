@@ -21,6 +21,9 @@ import {
   confirmSignUp,
   resendSignUpCode,
   decodeJWT,
+  resetPassword,
+  confirmResetPassword,
+  getCurrentUser,
 } from "aws-amplify/auth";
 import { userPoolClientId } from "@/constants";
 
@@ -77,7 +80,6 @@ export const authThunks = {
     async (
       {
         values,
-
         router,
       }: {
         values: { email: string; password: string };
@@ -91,9 +93,11 @@ export const authThunks = {
           password: values.password,
         });
 
+        const { userId } = await getCurrentUser();
+
         const token =
           localStorage.getItem(
-            `CognitoIdentityServiceProvider.${userPoolClientId}.41531dba-b0f1-70bb-c18e-0e4fe90200c1.idToken`
+            `CognitoIdentityServiceProvider.${userPoolClientId}.${userId}.idToken`
           ) || "";
 
         const payload = decodeJWT(token).payload;
@@ -104,9 +108,10 @@ export const authThunks = {
         router.push(`/`);
       } catch (error: any) {
         console.log("🚀 ~ error:", error);
-        toast.error("Sign in failed!");
         if (error._type === "UserNotConfirmedException") {
           toast.error("Please confirm your email");
+        } else {
+          toast.error("Sign in failed!");
         }
         return rejectWithValue(error.response.data.message);
       }
@@ -169,6 +174,7 @@ export const authThunks = {
         await signOut();
 
         Cookies.get("token") && Cookies.remove("token");
+        // localStorage.clear();
 
         toast.success("Logged out Successfully");
         dispatch(signoutAction());
@@ -176,6 +182,68 @@ export const authThunks = {
         return true;
       } catch (error: any) {
         return rejectWithValue(error.response.data.message);
+      }
+    }
+  ),
+
+  requestPasswordReset: createAsyncThunk(
+    "auth/requestPasswordReset",
+    async (
+      {
+        email,
+        router,
+      }: {
+        email: string;
+        router: any;
+      },
+      { rejectWithValue }
+    ) => {
+      try {
+        const { nextStep } = await resetPassword({
+          username: email,
+        });
+
+        const { codeDeliveryDetails }: any = nextStep;
+
+        toast.success("Password reset code sent to your email.");
+        router.push(
+          `/auth/confirm-password-reset?email=${email}&destination=${codeDeliveryDetails.destination}`
+        );
+      } catch (error: any) {
+        toast.error(error.message || "Failed to request password reset.");
+        return rejectWithValue(error.message || "Something went wrong");
+      }
+    }
+  ),
+
+  confirmPasswordReset: createAsyncThunk(
+    "auth/confirmPasswordReset",
+    async (
+      {
+        code,
+        email,
+        newPassword,
+        router,
+      }: {
+        email: string;
+        code: string;
+        newPassword: string;
+        router: any;
+      },
+      { rejectWithValue }
+    ) => {
+      try {
+        await confirmResetPassword({
+          username: email,
+          confirmationCode: code,
+          newPassword: newPassword,
+        });
+
+        toast.success("Password reset successful!");
+        router.push("/auth/sign-in");
+      } catch (error: any) {
+        toast.error(error.message || "Failed to reset password.");
+        return rejectWithValue(error.message || "Something went wrong");
       }
     }
   ),
