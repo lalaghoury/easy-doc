@@ -100,6 +100,8 @@ export const authThunks = {
             `CognitoIdentityServiceProvider.${userPoolClientId}.${userId}.idToken`
           ) || "";
 
+        !Cookies.get("token") && Cookies.set("token", token);
+
         const payload = decodeJWT(token).payload;
 
         dispatch(signinAction({ payload }));
