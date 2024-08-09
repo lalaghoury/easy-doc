@@ -163,10 +163,26 @@ export const authSlice = createSlice({
       })
       .addCase(authThunks.requestPasswordReset.fulfilled, (state) => {
         state.loading = false;
-        // Object.assign(state, initialState);
       })
       .addCase(
         authThunks.requestPasswordReset.rejected,
+        (state, action: PayloadAction<any>) => {
+          state.loading = false;
+          state.error = action.payload;
+          toast.error(action.payload);
+        }
+      )
+      
+      .addCase(authThunks.confirmPasswordReset.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(authThunks.confirmPasswordReset.fulfilled, (state) => {
+        state.loading = false;
+        Object.assign(state, initialState);
+      })
+      .addCase(
+        authThunks.confirmPasswordReset.rejected,
         (state, action: PayloadAction<any>) => {
           state.loading = false;
           state.error = action.payload;
